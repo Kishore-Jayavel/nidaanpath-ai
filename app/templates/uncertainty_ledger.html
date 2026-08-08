@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Uncertainty Ledger{% endblock %}
+
+{% block content %}
+<div class="page-title">📋 Diagnostic Uncertainty Ledger</div>
+<p class="page-subtitle">Evidence status for each key finding, categorised by source and confidence.</p>
+
+<div class="safety-banner">
+  <span>⚕</span>
+  Items marked <strong>Clinician Review Required</strong> cannot be resolved by NidaanPath.
+  They are escalated to the clinician packet.
+</div>
+
+<div class="card animate-in">
+  <div class="card-header">
+    <div class="card-title">
+      <div class="card-icon purple">⚖</div>
+      Evidence Ledger
+    </div>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+      <span class="ledger-status ledger-confirmed" style="font-size:0.7rem">Confirmed</span>
+      <span class="ledger-status ledger-missing" style="font-size:0.7rem">Missing</span>
+      <span class="ledger-status ledger-uncertain" style="font-size:0.7rem">Uncertain</span>
+      <span class="ledger-status ledger-clinician" style="font-size:0.7rem">Clinician Required</span>
+    </div>
+  </div>
+
+  {% if journey.uncertainty_items %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Information</th>
+          <th>Status</th>
+          <th>Source Documents</th>
+          <th>Confidence</th>
+          <th>Required Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in journey.uncertainty_items %}
+        <tr>
+          <td>
+            <strong>{{ item.information }}</strong>
+          </td>
+          <td>
+            {% if item.status == 'confirmed' %}
+            <span class="ledger-status ledger-confirmed">✅ {{ item.status_label }}</span>
+            {% elif item.status == 'missing' %}
+            <span class="ledger-status ledger-missing">✗ {{ item.status_label }}</span>
+            {% elif item.status == 'clinician_review' %}
+            <span class="ledger-status ledger-clinician">⚕ {{ item.status_label }}</span>
+            {% else %}
+            <span class="ledger-status ledger-uncertain">⚠ {{ item.status_label }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if item.sources %}
+              {% for src in item.sources[:3] %}
+              <span class="chip chip-muted" style="font-size:0.68rem;margin:1px;display:inline-block">{{ src[:30] }}</span>
+              {% endfor %}
+            {% else %}
+              <span style="color:var(--muted);font-size:0.82rem">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if item.confidence > 0 %}
+            <div style="display:flex;align-items:center;gap:0.5rem">
+              <div class="progress-bar-wrap" style="width:60px">
+                <div class="progress-bar" style="width:{{ (item.confidence * 100)|int }}%"></div>
+              </div>
+              <span style="font-size:0.8rem">{{ (item.confidence * 100)|int }}%</span>
+            </div>
+            {% else %}
+            <span style="color:var(--muted);font-size:0.82rem">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if item.required_action %}
+            <div style="font-size:0.8rem;color:var(--warning)">
+              → {{ item.required_action }}
+            </div>
+            {% else %}
+            <span style="color:var(--muted);font-size:0.8rem">None</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body" style="text-align:center;padding:3rem">
+    <div style="font-size:2.5rem">📭</div>
+    <p style="margin-top:1rem">No evidence items yet.<br>
+      <a href="{{ url_for('documents.upload') }}">Load the demo dataset</a> to see the ledger.
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Stagnation Signals -->
+{% if journey.signals %}
+<div class="card mt-6 animate-in" style="animation-delay:0.2s">
+  <div class="card-header">
+    <div class="card-title">
+      <div class="card-icon amber">⚡</div>
+      Active Stagnation Signals (Safety Gate 2 — Python Rules)
+    </div>
+    <span class="chip chip-warning">{{ journey.signals|length }} active</span>
+  </div>
+  <div class="card-body">
+    <div class="alert alert-info" style="margin-bottom:1.5rem;font-size:0.82rem">
+      <span>🛡</span>
+      These signals are evaluated by <strong>deterministic Python rules</strong> only.
+      Gemini does not determine stagnation.
+    </div>
+    {% for signal in journey.signals %}
+    <div style="padding:1rem;background:var(--bg);border-radius:var(--radius-lg);margin-bottom:0.75rem;border-left:3px solid {% if signal.severity == 'high' %}var(--critical){% else %}var(--warning){% endif %}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+        <strong style="font-size:0.9rem">{{ signal.signal_type | replace('_', ' ') | title }}</strong>
+        <span class="chip {% if signal.severity == 'high' %}chip-critical{% else %}chip-warning{% endif %}">
+          {{ signal.severity }}
+        </span>
+      </div>
+      <div style="font-size:0.82rem;color:var(--muted)">{{ signal.description }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div style="margin-top:1.5rem;display:flex;gap:1rem">
+  <a href="{{ url_for('journey.dashboard') }}" class="btn btn-outline">← Journey Twin</a>
+  <a href="{{ url_for('agent.activity') }}" class="btn btn-outline">Agent Activity →</a>
+  <a href="{{ url_for('reports.clinician_packet') }}" class="btn btn-primary">Clinician Packet →</a>
+</div>
+{% endblock %}

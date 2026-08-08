@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<!-- Safety Banner -->
+<div class="safety-banner" role="alert">
+  <span>🛡</span>
+  <span>NidaanPath does not diagnose, prescribe or replace healthcare professionals.
+  All data shown uses synthetic demo records only.</span>
+</div>
+
+<!-- Hero Section -->
+<section class="hero-section animate-in">
+  <div class="hero-eyebrow">National AI Competition MVP · Diagnostic Process Continuity</div>
+  <h1 class="hero-headline">
+    Medical records show<br>
+    what happened.<br>
+    <span>NidaanPath reveals<br>what is still unresolved.</span>
+  </h1>
+  <p class="hero-subtext">
+    NidaanPath AI reconstructs fragmented medical records into a live
+    <strong>Diagnostic Journey Twin</strong>, identifies when diagnostic progress
+    may have stalled, and prepares the missing evidence for safe clinician review.
+  </p>
+
+  <!-- Workflow -->
+  <div class="workflow-steps" role="list">
+    {% for step in ['Scattered Records','Journey Reconstruction','Process Gaps','Evidence Request','Active Progress','Clinician Review'] %}
+    <div class="workflow-step" role="listitem">{{ step }}</div>
+    {% if not loop.last %}<div class="workflow-arrow">→</div>{% endif %}
+    {% endfor %}
+  </div>
+
+  <!-- CTA Buttons -->
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:2rem;">
+    <a href="{{ url_for('demo.demo_home') }}" class="btn btn-teal btn-lg" id="btnLaunchDemo">
+      🎯 Launch Judge Demo
+    </a>
+    <a href="{{ url_for('intake.patient_story') }}" class="btn btn-lg"
+       style="background:rgba(255,255,255,0.15);color:white;border:1.5px solid rgba(255,255,255,0.3);">
+      ➕ Build a New Journey
+    </a>
+  </div>
+</section>
+
+<!-- Innovation Cards -->
+<div class="grid-3 mb-8">
+  <div class="innovation-card animate-in">
+    <div class="innovation-icon">🗺️</div>
+    <h3 class="innovation-title">Diagnostic Journey Twin</h3>
+    <p class="innovation-desc">
+      Connects consultations, tests, reports, follow-ups and referrals into a
+      live, evidence-linked chronological journey.
+    </p>
+  </div>
+  <div class="innovation-card animate-in" style="animation-delay:0.1s">
+    <div class="innovation-icon">🔍</div>
+    <h3 class="innovation-title">Stagnation Detection</h3>
+    <p class="innovation-desc">
+      Finds unresolved process gaps across multiple healthcare visits using
+      transparent, deterministic Python rules — not AI guesswork.
+    </p>
+  </div>
+  <div class="innovation-card animate-in" style="animation-delay:0.2s">
+    <div class="innovation-icon">🎯</div>
+    <h3 class="innovation-title">Next-Best-Evidence Agent</h3>
+    <p class="innovation-desc">
+      Asks the single question or requests the evidence that can most improve
+      understanding of the diagnostic journey.
+    </p>
+  </div>
+</div>
+
+<!-- Journey State Preview -->
+{% if case and case.journey_state != 'Awaiting Evidence' %}
+<div class="card mb-8 animate-in">
+  <div class="card-header">
+    <div class="card-title">
+      <div class="card-icon teal">🗺</div>
+      Active Case — Journey Preview
+    </div>
+    <a href="{{ url_for('journey.dashboard') }}" class="btn btn-outline btn-sm">
+      View Full Journey →
+    </a>
+  </div>
+  <div class="card-body">
+    <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+      <div>
+        <div class="state-label" style="color:var(--muted)">Current State</div>
+        {% if case.journey_state == 'Possible Stagnation' %}
+          <div class="state-chip state-possible-stagnation">⚠ {{ case.journey_state }}</div>
+        {% elif case.journey_state == 'Active Progress' %}
+          <div class="state-chip state-active-progress">✅ {{ case.journey_state }}</div>
+        {% else %}
+          <div class="state-chip state-awaiting-evidence">{{ case.journey_state }}</div>
+        {% endif %}
+      </div>
+      <div>
+        <div class="state-label" style="color:var(--muted)">Open Gaps</div>
+        <div style="font-size:2rem;font-weight:800;color:var(--critical)">
+          {{ case.get_remaining_gaps()|length }}
+        </div>
+      </div>
+      <div>
+        <div class="state-label" style="color:var(--muted)">Resolved</div>
+        <div style="font-size:2rem;font-weight:800;color:var(--success)">
+          {{ case.get_resolved_gaps()|length }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- How It Works -->
+<div class="card mb-8">
+  <div class="card-header">
+    <div class="card-title">
+      <div class="card-icon blue">⚙</div>
+      How NidaanPath Works
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="grid-2" style="gap:2rem">
+      <div>
+        <h4 style="margin-bottom:1rem;color:var(--deep-blue)">The Problem</h4>
+        <p style="margin-bottom:0.75rem">Patients with persistent symptoms consult multiple providers.
+        Their journey becomes fragmented across prescriptions, lab reports,
+        referrals, and consultation notes.</p>
+        <p>Existing platforms <strong>store and share</strong> records —
+        they do not reveal whether the <strong>diagnostic process is progressing</strong>.</p>
+      </div>
+      <div>
+        <h4 style="margin-bottom:1rem;color:var(--teal)">The Innovation</h4>
+        <ul style="list-style:none;padding:0">
+          {% for item in [
+            ('🔬','One Coordinator Agent + 6 controlled tools'),
+            ('🛡','3 Safety Gates — patient, rules, clinician'),
+            ('📊','Deterministic stagnation — pure Python rules'),
+            ('🌐','English + Tamil support'),
+            ('📄','Clinician escalation packet with PDF'),
+            ('🎯','Judge Demo Mode — no API key required'),
+          ] %}
+          <li style="display:flex;gap:0.75rem;align-items:center;margin-bottom:0.75rem;font-size:0.875rem">
+            <span>{{ item[0] }}</span>
+            <span>{{ item[1] }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Safety Statement -->
+<div class="alert alert-info mb-8" role="complementary">
+  <span style="font-size:1.5rem">🛡</span>
+  <div>
+    <strong>Safety Statement</strong><br>
+    NidaanPath does <strong>not</strong> diagnose diseases, predict outcomes,
+    recommend tests, prescribe medication, or replace healthcare professionals.
+    It identifies when the <em>process</em> of finding a diagnosis may have stalled
+    and supports safe clinician review. All data shown uses <strong>synthetic demo records</strong> only.
+    <br><br>
+    <em>This is a prototype diagnostic-process continuity system, not a medical device.</em>
+  </div>
+</div>
+{% endblock %}

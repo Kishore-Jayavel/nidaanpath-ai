@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Responsible AI{% endblock %}
+
+{% block content %}
+<div class="page-title">🛡 Responsible AI</div>
+<p class="page-subtitle">NidaanPath AI is designed with transparency, safety, and human oversight at its core.</p>
+
+<!-- Emergency Notice -->
+<div class="alert alert-critical mb-6 animate-in" role="alert" aria-live="assertive">
+  <span style="font-size:1.5rem">🚨</span>
+  <div>
+    <strong>Emergency Notice</strong><br>
+    NidaanPath is not an emergency service.
+    A person experiencing <strong>urgent or severe symptoms</strong> must seek
+    <strong>immediate professional medical assistance</strong>.
+    Call emergency services or visit the nearest hospital.
+  </div>
+</div>
+
+<!-- What NidaanPath Does NOT Do -->
+<div class="rai-section animate-in">
+  <h3 style="color:var(--critical);margin-bottom:1.5rem">❌ NidaanPath Does NOT</h3>
+  <ul class="rai-list">
+    {% for item in [
+      'Diagnose any disease',
+      'Predict medical outcomes',
+      'Prescribe medication',
+      'Recommend specific medical tests',
+      'Change or stop medication',
+      'Replace healthcare professionals',
+      'Identify medical negligence',
+      'Guarantee medical safety',
+      'Decide which doctor is correct',
+      'Make autonomous clinical decisions',
+    ] %}
+    <li>
+      <div class="rai-cross">✗</div>
+      {{ item }}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+
+<!-- What NidaanPath Does -->
+<div class="rai-section animate-in" style="animation-delay:0.1s">
+  <h3 style="color:var(--success);margin-bottom:1.5rem">✅ NidaanPath ONLY</h3>
+  <ul class="rai-list">
+    {% for item in [
+      'Reconstructs the diagnostic journey timeline',
+      'Detects process gaps from confirmed records',
+      'Asks clarifying questions about process gaps',
+      'Matches new evidence to open gaps',
+      'Prepares evidence for safe clinician review',
+      'Displays source fragments for every finding',
+      'Requires patient confirmation before data enters journey',
+      'Uses deterministic rules for stagnation detection',
+      'Preserves and displays all clinical uncertainty',
+      'Generates evidence-grounded clinician packets',
+    ] %}
+    <li>
+      <div class="rai-check">✓</div>
+      {{ item }}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+
+<!-- Three Safety Gates -->
+<div class="rai-section animate-in" style="animation-delay:0.15s">
+  <h3 style="color:var(--deep-blue);margin-bottom:1.5rem">🛡 Three Mandatory Safety Gates</h3>
+  <div class="grid-3" style="gap:1.5rem">
+    {% for num, title, desc in [
+      ('1', 'Patient Confirmation', 'No AI-extracted information enters the Diagnostic Journey Twin until the patient explicitly confirms or corrects it.'),
+      ('2', 'Deterministic Stagnation Rules', 'Journey state is determined by transparent Python rules only. Gemini cannot independently classify a journey as stagnant.'),
+      ('3', 'Clinician Escalation', 'Any medication uncertainty, contradiction or clinical ambiguity is escalated to the clinician packet. NidaanPath never resolves clinical uncertainty autonomously.'),
+    ] %}
+    <div style="background:var(--bg);border-radius:var(--radius-xl);padding:1.5rem;border:2px solid var(--border)">
+      <div style="width:40px;height:40px;background:var(--deep-blue);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.2rem;margin-bottom:1rem">{{ num }}</div>
+      <h4 style="margin-bottom:0.75rem">{{ title }}</h4>
+      <p style="font-size:0.875rem">{{ desc }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Technical Safeguards -->
+<div class="rai-section animate-in" style="animation-delay:0.2s">
+  <h3 style="color:var(--teal);margin-bottom:1.5rem">🔧 Technical Safeguards</h3>
+  <div class="grid-2" style="gap:1rem">
+    {% for item in [
+      ('🧪', 'Synthetic Data Only', 'All demo records are synthetic. No real patient data is used anywhere.'),
+      ('🔑', 'Server-Side API Only', 'Gemini API key is never exposed to the browser, JavaScript, or logs.'),
+      ('👁', 'Source Traceability', 'Every extracted finding includes a source document and source fragment.'),
+      ('📊', 'Confidence Display', 'Extraction confidence is shown for every finding.'),
+      ('✅', 'Uncertainty Preservation', 'Uncertain fields are always preserved and marked, never silently resolved.'),
+      ('📋', 'Agent Audit Trail', 'Every agent tool call is logged with timestamp and safety-gate status.'),
+      ('🗑', 'Temporary Processing', 'Uploaded files are processed server-side and are not shared.'),
+      ('🏷', 'Masked Identifiers', 'Patient identifiers use synthetic case codes only.'),
+    ] %}
+    <div style="display:flex;gap:1rem;padding:1rem;background:var(--bg);border-radius:var(--radius-lg)">
+      <span style="font-size:1.5rem">{{ item[0] }}</span>
+      <div>
+        <strong style="font-size:0.875rem">{{ item[1] }}</strong>
+        <p style="font-size:0.8rem;margin-top:0.25rem">{{ item[2] }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Limitations -->
+<div class="rai-section animate-in" style="animation-delay:0.25s">
+  <h3 style="color:var(--warning);margin-bottom:1.5rem">⚠ Limitations</h3>
+  <div class="alert alert-warning">
+    <span>⚠</span>
+    <ul style="margin:0;padding-left:1rem">
+      <li>NidaanPath is a prototype MVP, not a regulated medical device.</li>
+      <li>Extraction accuracy depends on document legibility and format.</li>
+      <li>Mock AI mode uses deterministic responses, not real language understanding.</li>
+      <li>The system cannot verify document authenticity.</li>
+      <li>Journey reconstruction relies on confirmed documents only.</li>
+      <li>No Tamil OCR is supported in the current MVP.</li>
+    </ul>
+  </div>
+</div>
+
+<div style="margin-top:1.5rem">
+  <a href="{{ url_for('main.index') }}" class="btn btn-outline">← Back to Home</a>
+</div>
+{% endblock %}

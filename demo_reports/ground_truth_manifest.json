@@ -1,0 +1,96 @@
+{
+  "patient": {
+    "name": "Arun Kumar",
+    "main_concern": "Persistent dizziness",
+    "symptom_duration": "approximately 2 months"
+  },
+  "documents": [
+    {
+      "number": 1,
+      "type": "consultation_note",
+      "date": "2024-06-03",
+      "expected_symptoms": ["dizziness"],
+      "expected_tests_ordered": ["CBC", "Fasting Blood Glucose"],
+      "expected_review": false
+    },
+    {
+      "number": 2,
+      "type": "lab_report",
+      "date": "2024-06-05",
+      "expected_tests_completed": ["CBC"],
+      "expected_review": false,
+      "note": "Result not reviewed by clinician — stagnation signal"
+    },
+    {
+      "number": 3,
+      "type": "appointment_slip",
+      "date": "2024-06-10",
+      "note": "Follow-up appointment — continuity evidence"
+    },
+    {
+      "number": 4,
+      "type": "prescription",
+      "date": "2024-06-18",
+      "expected_medications": ["Stugeron 25mg"],
+      "note": "Medication change — prior Betahistine not mentioned"
+    },
+    {
+      "number": 5,
+      "type": "lab_report",
+      "date": "2024-06-20",
+      "expected_tests_completed": ["Fasting Blood Glucose"],
+      "expected_review": false
+    },
+    {
+      "number": 6,
+      "type": "referral_slip",
+      "date": "2024-06-27",
+      "expected_referral": "ENT",
+      "note": "Referral issued — no specialist note present yet"
+    },
+    {
+      "number": 7,
+      "type": "patient_narration",
+      "date": "2024-07-05",
+      "note": "Patient self-report — uncertain fields expected"
+    },
+    {
+      "number": 8,
+      "type": "consultation_note",
+      "date": "2024-07-10",
+      "expected_symptoms": ["dizziness"],
+      "note": "Third recurrence of dizziness — stagnation signal"
+    },
+    {
+      "number": 9,
+      "type": "specialist_consultation_note",
+      "date": "2024-07-15",
+      "resolves_gap": "incomplete_referral",
+      "note": "ENT specialist note — resolves referral gap"
+    },
+    {
+      "number": 10,
+      "type": "result_review_note",
+      "date": "2024-07-22",
+      "resolves_gap": "unreviewed_result",
+      "note": "Clinician reviews all pending results — medication conflict flagged"
+    }
+  ],
+  "expected_journey_states": {
+    "reports_01_08": "Possible Stagnation",
+    "after_report_09": "Active Progress",
+    "after_report_10": "Active Progress"
+  },
+  "expected_gaps": [
+    "incomplete_referral",
+    "unreviewed_result",
+    "missing_treatment_response",
+    "record_contradiction"
+  ],
+  "expected_signals": [
+    "repeated_symptom",
+    "unreviewed_result",
+    "incomplete_referral",
+    "record_contradiction"
+  ]
+}

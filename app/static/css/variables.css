@@ -1,0 +1,62 @@
+/* NidaanPath AI — CSS Custom Properties */
+:root {
+  /* Brand Colors */
+  --navy: #102A43;
+  --deep-blue: #1D4ED8;
+  --teal: #0F766E;
+  --light-teal: #CCFBF1;
+  --bg: #F4F8FB;
+  --surface: #FFFFFF;
+  --success: #15803D;
+  --warning: #D97706;
+  --critical: #B91C1C;
+  --uncertainty: #7C3AED;
+  --muted: #64748B;
+
+  /* Extended Palette */
+  --navy-light: #1E3A5F;
+  --teal-light: #14B8A6;
+  --deep-blue-light: #3B82F6;
+  --success-light: #DCFCE7;
+  --warning-light: #FEF3C7;
+  --critical-light: #FEF2F2;
+  --uncertainty-light: #EDE9FE;
+  --border: #E2E8F0;
+  --border-strong: #CBD5E1;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Borders */
+  --radius-sm: 0.375rem;
+  --radius: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(16,42,67,0.08), 0 1px 2px rgba(16,42,67,0.06);
+  --shadow: 0 4px 16px rgba(16,42,67,0.10), 0 2px 6px rgba(16,42,67,0.06);
+  --shadow-lg: 0 12px 40px rgba(16,42,67,0.14), 0 4px 12px rgba(16,42,67,0.08);
+  --shadow-glow: 0 0 0 3px rgba(29,78,216,0.15);
+  --shadow-teal-glow: 0 0 0 3px rgba(15,118,110,0.15);
+
+  /* Transitions */
+  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout */
+  --nav-width: 240px;
+  --topbar-height: 64px;
+}

@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% block title %}Judge Demo{% endblock %}
+
+{% block content %}
+<div class="page-title">🎯 Judge Demo Mode</div>
+<p class="page-subtitle">Step-by-step demonstration of NidaanPath AI capabilities. No API key required.</p>
+
+<div class="safety-banner">
+  <span>🤖</span>
+  Running in <strong>Mock AI Mode</strong> — All extractions are deterministic, dataset-driven responses.
+  No Gemini API key is needed for this demonstration.
+</div>
+
+<!-- Demo Progress Track -->
+<div class="demo-track mb-8 animate-in">
+  {% set steps = [
+    ('📂', 'Load Records', 1 in loaded_reports),
+    ('🔍', 'Extract', 4 in loaded_reports),
+    ('⚠', 'Stagnation\nDetected', 8 in loaded_reports),
+    ('❓', 'Evidence\nRequested', 8 in loaded_reports),
+    ('🏥', 'Evidence\nAdded', 9 in loaded_reports),
+    ('✅', 'Journey\nUpdated', 9 in loaded_reports),
+    ('📋', 'Clinician\nPacket', 10 in loaded_reports),
+  ] %}
+  {% for icon, label, done in steps %}
+  <div class="demo-step {{ 'done' if done else '' }}
+    {{ 'active' if (loop.index == loaded_reports|length + 1 and not done) else '' }}">
+    <div class="demo-step-icon">{{ icon }}</div>
+    <div class="demo-step-label">{{ label }}</div>
+  </div>
+  {% if not loop.last %}<div style="color:var(--muted);font-size:1.2rem;padding:0 0.5rem;margin-top:1rem">→</div>{% endif %}
+  {% endfor %}
+</div>
+
+<!-- Step Cards -->
+<div class="grid-2 mb-8" style="gap:2rem;align-items:start">
+
+  <!-- STEP 1 -->
+  <div class="card animate-in {% if loaded_reports and 8 in loaded_reports %}{% else %}{% endif %}"
+       style="border:2px solid {% if 8 in loaded_reports %}var(--success){% else %}var(--deep-blue){% endif %}">
+    <div class="card-header"
+         style="background:{% if 8 in loaded_reports %}var(--success-light){% else %}#EFF6FF{% endif %}">
+      <div class="card-title">
+        <div class="card-icon {% if 8 in loaded_reports %}green{% else %}blue{% endif %}">
+          {{ '✅' if 8 in loaded_reports else '1' }}
+        </div>
+        Step 1 — Load Reports 01–08
+      </div>
+      {% if 8 in loaded_reports %}
+      <span class="chip chip-success">Complete</span>
+      {% else %}
+      <span class="chip chip-info">Start Here</span>
+      {% endif %}
+    </div>
+    <div class="card-body">
+      <p style="margin-bottom:1.5rem;font-size:0.875rem">
+        Load 8 synthetic medical records for Arun Kumar spanning June–July 2024.
+        The system will detect <strong>4 unresolved process gaps</strong> and set
+        journey state to <strong>Possible Stagnation</strong>.
+      </p>
+      {% if 8 not in loaded_reports %}
+      <button class="btn btn-primary w-full" id="btnStep1" onclick="runStep1()">
+        📂 Load Reports 01–08
+      </button>
+      {% else %}
+      <div class="alert alert-success">
+        <span>✅</span>
+        <div>
+          <strong>{{ loaded_reports|length }} reports loaded.</strong>
+          Journey State: <strong>{{ journey_state }}</strong>
+        </div>
+      </div>
+      <a href="{{ url_for('journey.dashboard') }}" class="btn btn-outline btn-sm w-full" style="margin-top:1rem">
+        View Journey Twin →
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="card animate-in" style="animation-delay:0.1s;border:2px solid {% if 9 in loaded_reports %}var(--success){% elif 8 in loaded_reports %}var(--teal){% else %}var(--border){% endif %}">
+    <div class="card-header"
+         style="background:{% if 9 in loaded_reports %}var(--success-light){% elif 8 in loaded_reports %}var(--light-teal){% else %}var(--bg){% endif %}">
+      <div class="card-title">
+        <div class="card-icon {% if 9 in loaded_reports %}green{% elif 8 in loaded_reports %}teal{% else %}blue{% endif %}">
+          {{ '✅' if 9 in loaded_reports else '2' }}
+        </div>
+        Step 2 — Coordinator Agent Question
+      </div>
+    </div>
+    <div class="card-body">
+      {% if 8 in loaded_reports %}
+      <div style="background:#EFF6FF;border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.5rem;border-left:3px solid var(--deep-blue)">
+        <div style="font-size:0.75rem;color:var(--deep-blue);font-weight:600;margin-bottom:0.5rem">🤖 COORDINATOR AGENT ASKS</div>
+        <div style="font-size:0.95rem;color:var(--navy);line-height:1.5">
+          "Did you complete the ENT specialist consultation at another hospital?"
+        </div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:0.5rem">
+          Tamil: "நீங்கள் ENT நிபுணர் ஆலோசனையை முடித்தீர்களா?"
+        </div>
+      </div>
+      <div style="margin-bottom:1rem">
+        <div style="font-size:0.78rem;color:var(--muted);font-weight:600;margin-bottom:0.5rem">TOOL CALLED</div>
+        <code style="background:var(--navy);color:#7DD3FC;padding:0.4rem 0.75rem;border-radius:var(--radius-sm);font-size:0.82rem">
+          select_next_evidence_question()
+        </code>
+      </div>
+      {% else %}
+      <p style="color:var(--muted);font-size:0.875rem">Complete Step 1 first to see the agent question.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="card animate-in" style="animation-delay:0.15s;border:2px solid {% if 9 in loaded_reports %}var(--success){% elif 8 in loaded_reports %}var(--teal){% else %}var(--border){% endif %}">
+    <div class="card-header"
+         style="background:{% if 9 in loaded_reports %}var(--success-light){% elif 8 in loaded_reports %}var(--light-teal){% else %}var(--bg){% endif %}">
+      <div class="card-title">
+        <div class="card-icon {% if 9 in loaded_reports %}green{% elif 8 in loaded_reports %}teal{% else %}blue{% endif %}">
+          {{ '✅' if 9 in loaded_reports else '3' }}
+        </div>
+        Step 3 — Add Specialist Evidence (Report 09)
+      </div>
+      {% if 9 in loaded_reports %}
+      <span class="chip chip-success">Complete</span>
+      {% elif 8 not in loaded_reports %}
+      <span class="chip chip-muted">Locked</span>
+      {% endif %}
+    </div>
+    <div class="card-body">
+      <p style="margin-bottom:1.5rem;font-size:0.875rem">
+        Add the ENT specialist consultation note. The system will:
+        match it to the open referral gap, resolve that gap, and
+        update the journey state to <strong>Active Progress</strong>.
+      </p>
+      {% if 9 not in loaded_reports and 8 in loaded_reports %}
+      <button class="btn btn-teal w-full" id="btnStep3" onclick="runStep3()">
+        🏥 Add Specialist Evidence — Report 09
+      </button>
+      {% elif 9 in loaded_reports %}
+      <div class="alert alert-success" style="margin-bottom:1rem">
+        <span>✅</span>
+        <div>
+          ENT referral gap resolved. Journey State updated to
+          <strong>{{ journey_state }}</strong>.
+        </div>
+      </div>
+      <a href="{{ url_for('journey.simulation') }}" class="btn btn-outline btn-sm w-full">
+        View Before/After Comparison →
+      </a>
+      {% else %}
+      <button class="btn btn-teal w-full" disabled>🔒 Complete Step 1 First</button>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="card animate-in" style="animation-delay:0.2s;border:2px solid {% if 10 in loaded_reports %}var(--success){% elif 9 in loaded_reports %}var(--navy){% else %}var(--border){% endif %}">
+    <div class="card-header"
+         style="background:{% if 10 in loaded_reports %}var(--success-light){% elif 9 in loaded_reports %}#F8FAFC{% else %}var(--bg){% endif %}">
+      <div class="card-title">
+        <div class="card-icon {% if 10 in loaded_reports %}green{% elif 9 in loaded_reports %}blue{% else %}blue{% endif %}">
+          {{ '✅' if 10 in loaded_reports else '4' }}
+        </div>
+        Step 4 — Add Result Review Evidence (Report 10)
+      </div>
+      {% if 10 in loaded_reports %}
+      <span class="chip chip-success">Complete</span>
+      {% elif 9 not in loaded_reports %}
+      <span class="chip chip-muted">Locked</span>
+      {% endif %}
+    </div>
+    <div class="card-body">
+      <p style="margin-bottom:1.5rem;font-size:0.875rem">
+        Add the consolidated result review note. The system will:
+        mark lab results as reviewed, retain the medication conflict
+        as a Clinician Review Required item, and update the clinician packet.
+      </p>
+      {% if 10 not in loaded_reports and 9 in loaded_reports %}
+      <button class="btn btn-navy w-full" id="btnStep4" onclick="runStep4()">
+        🔬 Add Result Review Evidence — Report 10
+      </button>
+      {% elif 10 in loaded_reports %}
+      <div class="alert alert-success" style="margin-bottom:1rem">
+        <span>✅</span>
+        Lab review gap resolved. Medication conflict escalated to clinician.
+      </div>
+      <a href="{{ url_for('reports.clinician_packet') }}" class="btn btn-primary btn-sm w-full">
+        View Updated Clinician Packet →
+      </a>
+      {% else %}
+      <button class="btn btn-navy w-full" disabled>🔒 Complete Step 3 First</button>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Quick Navigation -->
+<div class="card animate-in" style="animation-delay:0.25s">
+  <div class="card-header">
+    <div class="card-title">
+      <div class="card-icon teal">🧭</div>
+      Quick Navigation — All Views
+    </div>
+  </div>
+  <div class="card-body">
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+      {% for label, url in [
+        ('🗺 Journey Twin', url_for('journey.dashboard')),
+        ('📋 Uncertainty Ledger', url_for('journey.uncertainty_ledger')),
+        ('🤖 Agent Activity', url_for('agent.activity')),
+        ('⚡ Before/After', url_for('journey.simulation')),
+        ('📄 Clinician Packet', url_for('reports.clinician_packet')),
+        ('📊 Evaluation', url_for('reports.evaluation')),
+        ('🛡 Responsible AI', url_for('main.responsible_ai')),
+      ] %}
+      <a href="{{ url }}" class="btn btn-ghost btn-sm">{{ label }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const BATCH_URL = "{{ url_for('demo.load_batch') }}";
+const EVIDENCE_URL = "/demo/add-evidence/";
+
+function runStep1() {
+  const btn = document.getElementById('btnStep1');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Loading 8 reports...';
+  fetch(BATCH_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({reports:[1,2,3,4,5,6,7,8]})
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.innerHTML = '✅ Loaded! Refreshing...';
+    setTimeout(() => location.reload(), 1000);
+  })
+  .catch(e => { btn.innerHTML = '❌ Error'; btn.disabled = false; });
+}
+
+function runStep3() {
+  const btn = document.getElementById('btnStep3');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Loading specialist note...';
+  fetch(EVIDENCE_URL + '9', {method:'POST'})
+  .then(r => r.json())
+  .then(data => {
+    btn.innerHTML = '✅ Done! State: ' + data.journey_state;
+    setTimeout(() => location.reload(), 1000);
+  })
+  .catch(e => { btn.innerHTML = '❌ Error'; btn.disabled = false; });
+}
+
+function runStep4() {
+  const btn = document.getElementById('btnStep4');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Loading result review...';
+  fetch(EVIDENCE_URL + '10', {method:'POST'})
+  .then(r => r.json())
+  .then(data => {
+    btn.innerHTML = '✅ Done!';
+    setTimeout(() => location.reload(), 1000);
+  })
+  .catch(e => { btn.innerHTML = '❌ Error'; btn.disabled = false; });
+}
+</script>
+{% endblock %}

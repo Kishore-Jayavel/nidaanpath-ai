@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}Extraction Review{% endblock %}
+
+{% block content %}
+<div class="page-title">🔍 Extraction Review</div>
+<p class="page-subtitle">Review AI-extracted information from each document. Confirm, correct or reject before entering the Diagnostic Journey Twin.</p>
+
+<div class="safety-banner">
+  <span>🛡</span>
+  <strong>Safety Gate 1 Active:</strong>&nbsp;
+  Only confirmed information enters the Diagnostic Journey Twin.
+</div>
+
+{% if documents %}
+  {% for doc in documents %}
+  <div class="card mb-6 animate-in" id="docCard-{{ doc.id }}">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="card-icon {% if doc.extraction_status == 'confirmed' %}green{% elif doc.extraction_status == 'rejected' %}red{% else %}blue{% endif %}">
+          {% if doc.extraction_status == 'confirmed' %}✅
+          {% elif doc.extraction_status == 'rejected' %}✗
+          {% else %}📄{% endif %}
+        </div>
+        <div>
+          <div>{{ doc.original_filename }}</div>
+          <div style="font-size:0.75rem;color:var(--muted);font-weight:400;margin-top:2px">
+            Report #{{ doc.demo_report_number or '—' }} ·
+            {{ doc.extraction.get('document_type', 'unknown') | replace('_', ' ') | title }}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.5rem;align-items:center">
+        {% if doc.confirmed_by_user %}
+          <span class="chip chip-success">✅ Confirmed</span>
+        {% elif doc.extraction_status == 'rejected' %}
+          <span class="chip chip-critical">✗ Rejected</span>
+        {% else %}
+          <span class="chip chip-warning">⏳ Awaiting Review</span>
+        {% endif %}
+        <span class="chip chip-info">{{ (doc.extraction_confidence * 100)|int }}% confidence</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="grid-2" style="gap:2rem">
+        <!-- Document Details -->
+        <div>
+          <h4 style="margin-bottom:1rem;color:var(--navy)">Document Details</h4>
+          <table>
+            {% for label, key in [
+              ('Document Type', 'document_type'),
+              ('Date', 'document_date'),
+              ('Provider', 'provider'),
+              ('Result Review', 'result_review_status'),
+            ] %}
+            <tr>
+              <td style="width:40%;color:var(--muted);font-size:0.82rem">{{ label }}</td>
+              <td style="font-weight:500;font-size:0.88rem">
+                {{ doc.extraction.get(key, '—') or '—' }}
+              </td>
+            </tr>
+            {% endfor %}
+          </table>
+
+          {% if doc.extraction.get('symptoms') %}
+          <div style="margin-top:1.5rem">
+            <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;font-weight:600">SYMPTOMS</div>
+            {% for s in doc.extraction.get('symptoms', []) %}
+            <span class="chip chip-warning" style="margin:2px">{{ s }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if doc.extraction.get('tests_ordered') %}
+          <div style="margin-top:1rem">
+            <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;font-weight:600">TESTS ORDERED</div>
+            {% for t in doc.extraction.get('tests_ordered', []) %}
+            <span class="chip chip-info" style="margin:2px">{{ t }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if doc.extraction.get('tests_completed') %}
+          <div style="margin-top:1rem">
+            <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;font-weight:600">TESTS COMPLETED</div>
+            {% for t in doc.extraction.get('tests_completed', []) %}
+            <span class="chip chip-success" style="margin:2px">{{ t }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if doc.extraction.get('referral_specialty') %}
+          <div style="margin-top:1rem">
+            <span class="chip chip-purple">📋 Referral: {{ doc.extraction.get('referral_specialty') }}</span>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Extraction Evidence -->
+        <div>
+          <h4 style="margin-bottom:1rem;color:var(--navy)">Evidence & Uncertainty</h4>
+
+          {% if doc.extraction.get('medication_mentions') %}
+          <div style="margin-bottom:1rem">
+            <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;font-weight:600">MEDICATIONS MENTIONED</div>
+            {% for m in doc.extraction.get('medication_mentions', []) %}
+            <div class="chip chip-warning" style="margin:2px;display:block;width:fit-content">💊 {{ m }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if doc.extraction.get('follow_up_instructions') %}
+          <div style="margin-bottom:1rem">
+            <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;font-weight:600">FOLLOW-UP</div>
+            <div style="font-size:0.875rem">{{ doc.extraction.get('follow_up_instructions') }}</div>
+          </div>
+          {% endif %}
+
+          {% if doc.extraction.get('uncertain_fields') %}
+          <div class="alert alert-purple" style="margin-bottom:1rem">
+            <span>⚠</span>
+            <div>
+              <strong>Uncertain Fields:</strong><br>
+              {% for u in doc.extraction.get('uncertain_fields', []) %}
+              <div style="margin-top:2px">• {{ u }}</div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          {% if doc.extraction.get('source_fragments') %}
+          <details style="margin-top:1rem">
+            <summary style="cursor:pointer;font-size:0.82rem;color:var(--deep-blue);font-weight:500">
+              📖 View Source Fragments ({{ doc.extraction.get('source_fragments')|length }})
+            </summary>
+            <div style="margin-top:0.75rem;background:var(--bg);border-radius:0.5rem;padding:0.75rem">
+              {% for frag in doc.extraction.get('source_fragments', [])[:4] %}
+              <div style="font-size:0.78rem;font-style:italic;color:var(--muted);padding:4px 0;border-bottom:1px dashed var(--border)">
+                "{{ frag }}"
+              </div>
+              {% endfor %}
+            </div>
+          </details>
+          {% endif %}
+
+          <!-- Trust Labels -->
+          <div style="margin-top:1.5rem;display:flex;gap:0.5rem;flex-wrap:wrap">
+            <span class="trust-label trust-ai">🤖 AI Extracted</span>
+            {% if doc.confirmed_by_user %}
+            <span class="trust-label trust-confirmed">✅ Patient Confirmed</span>
+            {% endif %}
+            {% if doc.extraction.get('uncertain_fields') %}
+            <span class="trust-label trust-clinician">⚕ Clinician Review Required</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      {% if not doc.confirmed_by_user and doc.extraction_status not in ('rejected', 'unreadable') %}
+      <div class="divider"></div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap">
+        <button class="btn btn-teal" onclick="confirmDoc('{{ doc.id }}', 'confirm')">
+          ✅ Confirm — Enter Journey
+        </button>
+        <button class="btn btn-ghost" onclick="confirmDoc('{{ doc.id }}', 'reject')">
+          ✗ Reject
+        </button>
+        <button class="btn btn-ghost" onclick="confirmDoc('{{ doc.id }}', 'unreadable')">
+          📛 Mark Unreadable
+        </button>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <div style="margin-top:2rem;display:flex;gap:1rem">
+    <a href="{{ url_for('journey.dashboard') }}" class="btn btn-primary">
+      🗺 View Diagnostic Journey Twin →
+    </a>
+  </div>
+{% else %}
+<div class="card">
+  <div class="card-body" style="text-align:center;padding:4rem">
+    <div style="font-size:3rem;margin-bottom:1rem">📭</div>
+    <h3>No Documents Yet</h3>
+    <p style="margin:1rem 0">Upload documents or load the demo dataset first.</p>
+    <a href="{{ url_for('documents.upload') }}" class="btn btn-primary">
+      ← Go to Medical Records
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDoc(docId, action) {
+  const fd = new FormData();
+  fd.append('action', action);
+  fetch(`/documents/confirm/${docId}`, {method:'POST', body:fd})
+    .then(r => r.json())
+    .then(data => {
+      const card = document.getElementById('docCard-' + docId);
+      if (action === 'confirm') {
+        card.style.borderLeft = '4px solid var(--success)';
+      } else {
+        card.style.opacity = '0.5';
+      }
+      setTimeout(() => location.reload(), 500);
+    });
+}
+</script>
+{% endblock %}

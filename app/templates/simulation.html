@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Progress Simulation{% endblock %}
+
+{% block content %}
+<div class="page-title">⚡ Counterfactual Progress Simulator</div>
+<p class="page-subtitle">Understand how adding specific evidence would change the journey state.</p>
+
+<div class="alert alert-info mb-6 animate-in">
+  <span>ℹ</span>
+  <div>
+    <strong>What this simulates:</strong>
+    This simulates <em>information and diagnostic-workflow progress</em>,
+    not the patient's medical outcome or clinical prognosis.
+    NidaanPath cannot predict medical results.
+  </div>
+</div>
+
+<!-- Before / After Comparison (Competition Screenshot) -->
+<div class="card mb-8 animate-in">
+  <div class="card-header">
+    <div class="card-title">
+      <div class="card-icon blue">⚖</div>
+      Before and After — Evidence Comparison
+    </div>
+    <span class="chip chip-purple">Judge Demo View</span>
+  </div>
+  <div class="card-body">
+    <div class="comparison-grid">
+
+      <!-- BEFORE -->
+      <div class="comparison-panel before">
+        <div class="comparison-title" style="color:#92400E">BEFORE — Reports 01–08</div>
+
+        <div style="margin-bottom:1.5rem">
+          <div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-bottom:0.5rem">JOURNEY STATE</div>
+          <div class="state-chip state-possible-stagnation">⚠ Possible Stagnation</div>
+        </div>
+
+        <div class="comparison-metric">
+          <span class="comparison-metric-label">Unreviewed Results</span>
+          <span class="comparison-metric-value text-critical">2</span>
+        </div>
+        <div class="comparison-metric">
+          <span class="comparison-metric-label">Incomplete Referrals</span>
+          <span class="comparison-metric-value text-critical">1</span>
+        </div>
+        <div class="comparison-metric">
+          <span class="comparison-metric-label">Treatment-Response Gaps</span>
+          <span class="comparison-metric-value text-warning">1</span>
+        </div>
+        <div class="comparison-metric">
+          <span class="comparison-metric-label">Unresolved Gaps Total</span>
+          <span class="comparison-metric-value text-critical">4</span>
+        </div>
+        <div class="comparison-metric">
+          <span class="comparison-metric-label">ENT Referral Status</span>
+          <span class="chip chip-critical">Open</span>
+        </div>
+        <div class="comparison-metric">
+          <span class="comparison-metric-label">Lab Results Reviewed</span>
+          <span class="chip chip-critical">No</span>
+        </div>
+
+        <div style="margin-top:1.5rem">
+          {% if not has_report_09 %}
+          <button class="btn btn-primary w-full" onclick="addEvidence(9)">
+            🏥 Apply Specialist Evidence (Report 09)
+          </button>
+          {% else %}
+          <div class="chip chip-success w-full" style="justify-content:center;padding:0.75rem">
+            ✅ Report 09 already loaded
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="comparison-arrow">→</div>
+
+      <!-- AFTER Report 09 -->
+      <div class="comparison-panel after">
+        <div class="comparison-title" style="color:#14532D">AFTER — Adding Report 09</div>
+
+        <div style="margin-bottom:1.5rem">
+          <div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-bottom:0.5rem">EXPECTED STATE</div>
+          {% if has_report_09 %}
+          <div class="state-chip state-active-progress">✅ {{ journey.journey_state }}</div>
+          {% else %}
+          <div class="state-chip state-active-progress" style="opacity:0.5">
+            ✅ Active Progress (predicted)
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="comparison-metric">
+          <span class="comparison-metric-label">Unreviewed Results</span>
+          <span class="comparison-metric-value text-warning">2</span>
+        </div>
+        <div class="comparison-metric">
+          <span class="comparison-metric-label">Incomplete Referrals</span>
+          {% if has_report_09 %}
+          <span class="comparison-metric-value text-success">0</span>
+          {% else %}
+          <span class="comparison-metric-value" style="color:var(--muted)">—</span>
+          {% endif %}
+        </div>
+        <div class="comparison-metric">
+          <span class="comparison-metric-label">Treatment-Response Gaps</span>
+          <span class="comparison-metric-value text-warning">1</span>
+        </div>
+        <div class="comparison-metric">
+          <span class="comparison-metric-label">Unresolved Gaps Total</span>
+          {% if has_report_09 %}
+          <span class="comparison-metric-value text-warning">3</span>
+          {% else %}
+          <span class="comparison-metric-value" style="color:var(--muted)">3 (predicted)</span>
+          {% endif %}
+        </div>
+        <div class="comparison-metric">
+          <span class="comparison-metric-label">ENT Referral Status</span>
+          {% if has_report_09 %}
+          <span class="chip chip-success">✅ Resolved</span>
+          {% else %}
+          <span class="chip chip-success" style="opacity:0.5">Resolved (predicted)</span>
+          {% endif %}
+        </div>
+        <div class="comparison-metric">
+          <span class="comparison-metric-label">Lab Results Reviewed</span>
+          {% if has_report_10 %}
+          <span class="chip chip-success">✅ Confirmed</span>
+          {% else %}
+          <span class="chip chip-warning">Awaiting Report 10</span>
+          {% endif %}
+        </div>
+
+        {% if has_report_09 and not has_report_10 %}
+        <div style="margin-top:1.5rem">
+          <button class="btn btn-navy w-full" onclick="addEvidence(10)">
+            🔬 Apply Result Review Evidence (Report 10)
+          </button>
+        </div>
+        {% elif not has_report_09 %}
+        <div class="alert alert-info" style="margin-top:1.5rem;font-size:0.8rem">
+          <span>ℹ</span>
+          Apply Report 09 first to see the state change.
+        </div>
+        {% else %}
+        <div style="margin-top:1.5rem" class="chip chip-success" style="justify-content:center">
+          ✅ All demo evidence applied
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Report 10 impact -->
+    {% if has_report_09 %}
+    <div style="margin-top:2rem;padding:1.5rem;background:linear-gradient(135deg,#F0FDF4,#ECFDF5);border-radius:var(--radius-xl);border:1px solid #22C55E">
+      <h4 style="color:var(--success);margin-bottom:1rem">
+        {{ '✅' if has_report_10 else '📋' }} Report 10 Impact — Result Review Evidence
+      </h4>
+      <div class="grid-2" style="gap:1rem">
+        <div>
+          <strong style="font-size:0.85rem">When Report 10 is added:</strong>
+          <ul style="list-style:none;padding:0;margin-top:0.75rem">
+            {% for item in [
+              ('Lab Result Review Gap', 'Resolved ✅'),
+              ('CBC Result', 'Reviewed by clinician'),
+              ('Fasting Glucose Result', 'Reviewed by clinician'),
+              ('Medication Conflict', '⚕ Clinician Review Required'),
+            ] %}
+            <li style="display:flex;justify-content:space-between;padding:0.5rem 0;font-size:0.85rem;border-bottom:1px dashed rgba(0,0,0,0.08)">
+              <span style="color:var(--muted)">{{ item[0] }}</span>
+              <span style="font-weight:600">{{ item[1] }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div>
+          <strong style="font-size:0.85rem">Remaining uncertainty:</strong>
+          <div class="alert alert-purple" style="margin-top:0.75rem;font-size:0.8rem">
+            <span>⚕</span>
+            Medication instruction conflict (Betahistine vs Stugeron) requires
+            clinician confirmation. NidaanPath cannot resolve this.
+          </div>
+          {% if not has_report_10 %}
+          <button class="btn btn-navy" style="margin-top:1rem;width:100%" onclick="addEvidence(10)">
+            🔬 Add Report 10
+          </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Current State Summary -->
+<div class="card animate-in" style="animation-delay:0.2s">
+  <div class="card-header">
+    <div class="card-title">
+      <div class="card-icon amber">📊</div>
+      Current Journey State
+    </div>
+  </div>
+  <div class="card-body">
+    <div style="display:flex;gap:3rem;flex-wrap:wrap">
+      <div>
+        <div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-bottom:0.5rem">STATE</div>
+        {% if journey.journey_state == 'Possible Stagnation' %}
+        <div class="state-chip state-possible-stagnation">⚠ {{ journey.journey_state }}</div>
+        {% elif journey.journey_state == 'Active Progress' %}
+        <div class="state-chip state-active-progress">✅ {{ journey.journey_state }}</div>
+        {% else %}
+        <div class="state-chip state-awaiting-evidence">{{ journey.journey_state }}</div>
+        {% endif %}
+      </div>
+      <div>
+        <div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-bottom:0.5rem">OPEN GAPS</div>
+        <div style="font-size:2rem;font-weight:800;color:var(--critical)">{{ journey.remaining_gaps|length }}</div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-bottom:0.5rem">RESOLVED</div>
+        <div style="font-size:2rem;font-weight:800;color:var(--success)">{{ journey.resolved_gaps|length }}</div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-bottom:0.5rem">DOCUMENTS</div>
+        <div style="font-size:2rem;font-weight:800;color:var(--deep-blue)">{{ journey.total_documents }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:1.5rem;display:flex;gap:1rem;flex-wrap:wrap">
+  <a href="{{ url_for('agent.activity') }}" class="btn btn-outline">← Agent Activity</a>
+  <a href="{{ url_for('reports.clinician_packet') }}" class="btn btn-primary">Clinician Packet →</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function addEvidence(num) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Loading Report ${String(num).padStart(2,'0')}...`;
+  fetch('/demo/add-evidence/' + num, {method:'POST'})
+    .then(r => r.json())
+    .then(data => {
+      btn.innerHTML = '✅ Done — ' + data.journey_state;
+      setTimeout(() => location.reload(), 1000);
+    })
+    .catch(() => { btn.innerHTML = '❌ Error'; btn.disabled = false; });
+}
+</script>
+{% endblock %}

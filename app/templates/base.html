@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang', 'en') }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}NidaanPath AI{% endblock %} — Diagnostic Journey Agent</title>
+  <meta name="description" content="NidaanPath AI detects when the diagnostic process has stopped progressing. Not a diagnosis — diagnostic process continuity.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="app-shell">
+  <!-- Left Navigation -->
+  <nav class="sidenav">
+    <div class="sidenav-logo">
+      <a href="{{ url_for('main.index') }}" class="logo-mark">
+        <div class="logo-icon">🧭</div>
+        <div>
+          <div class="logo-text">NidaanPath</div>
+          <span class="logo-sub">AI Diagnostic Journey Agent</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="sidenav-steps">
+      {% set steps = [
+        ('intake.patient_story', '1', 'Patient Story', '💬'),
+        ('documents.upload', '2', 'Medical Records', '📁'),
+        ('documents.extraction_review', '3', 'Extraction Review', '🔍'),
+        ('journey.dashboard', '4', 'Journey Twin', '🗺'),
+        ('journey.uncertainty_ledger', '5', 'Process Gaps', '⚠'),
+        ('agent.activity', '6', 'Agent Action', '🤖'),
+        ('journey.simulation', '7', 'Simulation', '⚡'),
+        ('reports.clinician_packet', '8', 'Clinician Packet', '📋'),
+        ('reports.evaluation', '9', 'Evaluation', '📊'),
+      ] %}
+      {% for endpoint, num, label, icon in steps %}
+      <a href="{{ url_for(endpoint) }}"
+         class="nav-step {% if request.endpoint == endpoint %}active{% endif %}">
+        <div class="nav-step-num">{{ num }}</div>
+        <span>{{ icon }} {{ label }}</span>
+      </a>
+      {% endfor %}
+    </div>
+
+    <div class="sidenav-footer">
+      <a href="{{ url_for('main.responsible_ai') }}" style="display:block;color:rgba(255,255,255,0.5);font-size:0.78rem;text-decoration:none;margin-bottom:var(--space-3);padding:var(--space-2) var(--space-3);">
+        🛡 Responsible AI
+      </a>
+      <form action="{{ url_for('main.clear_case') }}" method="POST" id="clearCaseForm">
+        <button type="submit" class="clear-case-btn"
+                onclick="return confirm('Clear all case data?')">
+          🗑 Clear Case Data
+        </button>
+      </form>
+    </div>
+  </nav>
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      {% if case is defined and case %}
+        <span class="case-badge">Case: {{ case.case_code }}</span>
+        {% if case.demo_mode %}
+        <span class="demo-badge">🎯 Judge Demo</span>
+        {% endif %}
+      {% endif %}
+      {% block topbar_extra %}{% endblock %}
+    </div>
+    <div class="topbar-right">
+      <!-- Language Toggle -->
+      <div class="lang-toggle">
+        <button class="lang-btn {% if session.get('lang','en') == 'en' %}active{% endif %}"
+                onclick="setLanguage('en')" id="langEn">English</button>
+        <button class="lang-btn {% if session.get('lang','en') == 'ta' %}active{% endif %}"
+                onclick="setLanguage('ta')" id="langTa">தமிழ்</button>
+      </div>
+      <a href="{{ url_for('demo.demo_home') }}" class="btn btn-primary btn-sm">
+        🎯 Judge Demo
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="page-body">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/language.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

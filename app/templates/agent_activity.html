@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}Agent Activity{% endblock %}
+
+{% block content %}
+<div class="page-title">🤖 NidaanPath Coordinator Agent</div>
+<p class="page-subtitle">One LLM-powered Coordinator Agent · Six controlled tools · Three safety gates</p>
+
+<div class="safety-banner">
+  <span>🤖</span>
+  The Coordinator Agent calls only approved tools. It cannot make clinical decisions.
+  Safety Gate 2 prevents Gemini from determining stagnation.
+</div>
+
+<!-- Agent Goal + Status -->
+<div class="grid-2 mb-8" style="gap:2rem">
+  <div class="card animate-in">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="card-icon blue">🎯</div>
+        Agent Goal
+      </div>
+    </div>
+    <div class="card-body">
+      <div style="font-size:1rem;color:var(--navy);line-height:1.6;margin-bottom:1.5rem">
+        {{ agent.goal }}
+      </div>
+
+      <div class="grid-2" style="gap:1rem">
+        {% for label, val, color in [
+          ('Documents Processed', agent.total_documents, 'var(--deep-blue)'),
+          ('Confirmed', agent.confirmed_documents, 'var(--teal)'),
+          ('Consultations ID', agent.consultations_identified, 'var(--deep-blue)'),
+          ('Lab Reports', agent.lab_reports_matched, 'var(--teal)'),
+          ('Referrals', agent.referrals_detected, 'var(--warning)'),
+          ('Open Gaps', agent.remaining_gaps, 'var(--critical)'),
+        ] %}
+        <div style="background:var(--bg);border-radius:var(--radius);padding:0.75rem;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--muted)">{{ label }}</span>
+          <strong style="color:{{ color }}">{{ val }}</strong>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div style="margin-top:1.5rem">
+        <div style="font-size:0.78rem;color:var(--muted);font-weight:600;margin-bottom:0.5rem">JOURNEY STATE</div>
+        {% if agent.journey_state == 'Possible Stagnation' %}
+        <div class="state-chip state-possible-stagnation">⚠ {{ agent.journey_state }}</div>
+        {% elif agent.journey_state == 'Active Progress' %}
+        <div class="state-chip state-active-progress">✅ {{ agent.journey_state }}</div>
+        {% else %}
+        <div class="state-chip state-awaiting-evidence">{{ agent.journey_state }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Current Decision -->
+  <div class="card animate-in" style="animation-delay:0.1s">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="card-icon purple">⚙</div>
+        Current Agent Decision
+      </div>
+    </div>
+    <div class="card-body">
+      <div style="margin-bottom:1.5rem">
+        <div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-bottom:0.5rem">SELECTED TOOL</div>
+        <div style="font-family:var(--font-mono);background:var(--navy);color:#7DD3FC;padding:0.75rem 1rem;border-radius:var(--radius);font-size:0.9rem">
+          {{ agent.current_tool }}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem;color:var(--muted);font-weight:600;margin-bottom:0.5rem">DECISION</div>
+        <div style="font-size:0.9rem;color:var(--navy);line-height:1.5">
+          {{ agent.current_decision }}
+        </div>
+      </div>
+
+      {% if agent.next_question %}
+      <div style="margin-top:1.5rem;padding:1rem;background:#EFF6FF;border-radius:var(--radius-lg);border:1px solid #BFDBFE">
+        <div style="font-size:0.75rem;color:var(--deep-blue);font-weight:600;margin-bottom:0.5rem">NEXT EVIDENCE QUESTION</div>
+        <div style="font-size:0.875rem;color:var(--navy);line-height:1.5">
+          {{ agent.next_question.question_en }}
+        </div>
+        <div style="margin-top:0.5rem">
+          <span class="chip chip-success" style="font-size:0.7rem">✓ Safety Cleared</span>
+          <span class="chip chip-info" style="font-size:0.7rem">Gap: {{ agent.next_question.gap_id }}</span>
+        </div>
+      </div>
+      {% endif %}
+
+      <button class="btn btn-primary w-full" style="margin-top:1.5rem" onclick="runCoordinator()">
+        ▶ Run Coordinator Agent
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Six Tools Overview -->
+<div class="card mb-8 animate-in" style="animation-delay:0.15s">
+  <div class="card-header">
+    <div class="card-title">
+      <div class="card-icon teal">🔧</div>
+      Six Controlled Tools
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="grid-2" style="gap:1rem">
+      {% for num, name, desc, status in [
+        ('1', 'extract_medical_document()', 'Extract structured information from prescriptions, reports, referrals and consultation notes.', True),
+        ('2', 'build_diagnostic_journey()', 'Create the chronological journey using confirmed information.', True),
+        ('3', 'detect_process_gaps()', 'Detect repeated symptoms, unreviewed reports, incomplete referrals, missed follow-ups (Python only).', True),
+        ('4', 'match_new_evidence()', 'Match newly uploaded documents to existing process gaps.', True),
+        ('5', 'select_next_evidence_question()', 'Select the single question that can most improve understanding of the journey.', True),
+        ('6', 'generate_clinician_packet()', 'Generate an evidence-grounded clinician escalation packet.', True),
+      ] %}
+      <div style="background:var(--bg);border-radius:var(--radius-lg);padding:1rem;border:1px solid var(--border)">
+        <div style="display:flex;align-items:flex-start;gap:0.75rem">
+          <div style="width:28px;height:28px;background:var(--deep-blue);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0">{{ num }}</div>
+          <div>
+            <div style="font-family:var(--font-mono);font-size:0.78rem;color:var(--deep-blue);font-weight:600;margin-bottom:0.25rem">{{ name }}</div>
+            <div style="font-size:0.78rem;color:var(--muted)">{{ desc }}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Agent Activity Log -->
+<div class="card animate-in" style="animation-delay:0.2s">
+  <div class="card-header">
+    <div class="card-title">
+      <div class="card-icon blue">📜</div>
+      Agent Activity Log
+    </div>
+    <span class="chip chip-muted">{{ agent.actions | length }} entries</span>
+  </div>
+  <div class="card-body" style="padding:0">
+    <div class="agent-log" id="agentLog">
+      {% if agent.actions %}
+        {% for action in agent.actions | reverse %}
+        <div class="agent-log-entry">
+          <span class="log-time">{{ action.timestamp }}</span>
+          <span class="log-tool">{{ action.tool }}</span>
+          <div>
+            <div class="log-result">{{ action.result }}</div>
+            <span class="log-safety {{ 'pass' if action.safety_gate and 'PASS' in action.safety_gate else 'info' }}">
+              🛡 {{ action.safety_gate or 'N/A' }}
+            </span>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center;padding:2rem;color:#64748B">
+          No agent activity yet. Click "Run Coordinator Agent" to begin.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Resolved/Remaining -->
+{% if agent.resolved_gap_list %}
+<div class="card mt-6 animate-in" style="animation-delay:0.25s">
+  <div class="card-header">
+    <div class="card-title">
+      <div class="card-icon green">✅</div>
+      Resolved Gaps
+    </div>
+  </div>
+  <div class="card-body">
+    {% for gap in agent.resolved_gap_list %}
+    <div style="padding:0.75rem;background:var(--success-light);border-radius:var(--radius);margin-bottom:0.5rem;border-left:3px solid var(--success)">
+      <div style="font-weight:600;font-size:0.9rem">✅ {{ gap.label }}</div>
+      <div style="font-size:0.8rem;color:var(--muted)">{{ gap.resolution_note }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div style="margin-top:1.5rem;display:flex;gap:1rem;flex-wrap:wrap">
+  <a href="{{ url_for('journey.dashboard') }}" class="btn btn-outline">← Journey Twin</a>
+  <a href="{{ url_for('journey.simulation') }}" class="btn btn-outline">Simulation →</a>
+  <a href="{{ url_for('reports.clinician_packet') }}" class="btn btn-primary">Clinician Packet →</a>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function runCoordinator() {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Running...';
+  fetch("{{ url_for('agent.run_coordinator') }}", {method:'POST'})
+    .then(r => r.json())
+    .then(data => {
+      btn.innerHTML = '✅ Done';
+      setTimeout(() => location.reload(), 600);
+    })
+    .catch(() => { btn.innerHTML = '❌ Error'; btn.disabled = false; });
+}
+</script>
+{% endblock %}

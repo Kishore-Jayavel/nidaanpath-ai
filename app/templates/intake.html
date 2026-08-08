@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Patient Story{% endblock %}
+
+{% block content %}
+<div class="page-title">💬 Patient Story</div>
+<p class="page-subtitle">Provide the patient's account in their own words. AI will extract key information for your confirmation.</p>
+
+<div class="safety-banner">
+  <span>🛡</span>
+  <strong>Safety Gate 1:</strong>&nbsp;
+  No AI-extracted information enters the journey until you confirm it.
+</div>
+
+<div class="grid-2" style="gap:2rem;align-items:start">
+  <!-- Input Panel -->
+  <div class="card animate-in">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="card-icon blue">💬</div>
+        Patient Narration
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btnLoadDemo" onclick="loadDemoNarration()">
+        📋 Load Demo Narration
+      </button>
+    </div>
+    <div class="card-body">
+      <form method="POST" id="narrationForm">
+        <div class="form-group">
+          <label class="form-label" for="narration">
+            Patient's account of their diagnostic journey
+            <span class="chip chip-muted" style="margin-left:0.5rem">English or Tamil</span>
+          </label>
+          <textarea class="form-textarea" id="narration" name="narration"
+                    placeholder="In your own words, describe your medical journey, symptoms, visits, tests, referrals and any concerns..."
+                    style="min-height:180px">{{ case.patient_narration or '' }}</textarea>
+        </div>
+
+        <!-- Demo Narration -->
+        <div class="alert alert-info" style="margin-bottom:1.5rem;font-size:0.82rem">
+          <span>📋</span>
+          <div>
+            <strong>Demo narration:</strong>
+            <em>"I have had dizziness for about one month. I visited several doctors,
+            completed two blood tests and received an ENT referral.
+            I am not sure whether the reports were reviewed, and I do not know
+            whether my earlier medicine should continue."</em>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:1rem">
+          <button type="submit" class="btn btn-primary" id="btnExtract">
+            🔍 Extract Information
+          </button>
+          <button type="button" class="btn btn-ghost" onclick="clearNarration()">
+            ✕ Clear
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Extraction Results -->
+  <div id="extractionPanel" class="animate-in" style="animation-delay:0.15s">
+    {% if extracted %}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-icon teal">✅</div>
+          Extracted Information
+        </div>
+        <span class="chip chip-info">
+          <span class="spinner" style="width:8px;height:8px;display:none" id="aiSpinner"></span>
+          🤖 AI Extracted
+        </span>
+      </div>
+      <div class="card-body">
+        <form action="{{ url_for('intake.confirm_narration') }}" method="POST">
+          <div class="alert alert-warning" style="margin-bottom:1.5rem">
+            <span>⚠</span>
+            <strong>Please review and correct any errors before confirming.</strong>
+          </div>
+
+          {% set fields = [
+            ('main_concern', 'Main Concern', extracted.get('main_concern', '')),
+            ('symptom_duration', 'Symptom Duration', extracted.get('symptom_duration', '')),
+          ] %}
+          {% for fname, flabel, fval in fields %}
+          <div class="form-group">
+            <label class="form-label" for="{{ fname }}">
+              {{ flabel }}
+              <span class="trust-label trust-ai">🤖 AI Extracted</span>
+            </label>
+            <input class="form-input" type="text" id="{{ fname }}" name="{{ fname }}"
+                   value="{{ fval }}">
+          </div>
+          {% endfor %}
+
+          <div class="form-group">
+            <label class="form-label">Consultations Remembered</label>
+            <div style="font-size:1.5rem;font-weight:700;color:var(--deep-blue)">
+              {{ extracted.get('consultations_remembered', 0) }}
+            </div>
+          </div>
+
+          {% if extracted.get('tests_remembered') %}
+          <div class="form-group">
+            <label class="form-label">Tests Remembered</label>
+            <div>
+              {% for test in extracted.get('tests_remembered', []) %}
+              <span class="chip chip-info" style="margin:2px">{{ test }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          {% if extracted.get('medication_concerns') %}
+          <div class="form-group">
+            <label class="form-label">
+              Medication Concerns
+              <span class="trust-label trust-clinician">⚠ Clinician Review Required</span>
+            </label>
+            <div>
+              {% for m in extracted.get('medication_concerns', []) %}
+              <div class="chip chip-warning" style="margin:2px">{{ m }}</div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="form-group">
+            <label class="form-label" for="preferred_language">Preferred Language</label>
+            <select class="form-select" name="preferred_language" id="preferred_language">
+              <option value="en" {% if extracted.get('preferred_language','en') == 'en' %}selected{% endif %}>English</option>
+              <option value="ta" {% if extracted.get('preferred_language') == 'ta' %}selected{% endif %}>தமிழ் (Tamil)</option>
+            </select>
+          </div>
+
+          <div style="display:flex;gap:1rem;margin-top:1.5rem">
+            <button type="submit" class="btn btn-teal">
+              ✅ Confirm & Proceed to Medical Records →
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="card" style="border:2px dashed var(--border)">
+      <div class="card-body" style="text-align:center;padding:3rem">
+        <div style="font-size:3rem;margin-bottom:1rem">🤖</div>
+        <h3 style="margin-bottom:0.5rem">AI Extraction</h3>
+        <p>Submit the patient narration to extract structured information for your review.</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function loadDemoNarration() {
+  fetch("{{ url_for('intake.load_demo_narration') }}", {method:'POST',headers:{'Content-Type':'application/json'}})
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById('narration').value = data.narration;
+      document.getElementById('narrationForm').submit();
+    }
+  });
+}
+
+function clearNarration() {
+  document.getElementById('narration').value = '';
+}
+
+document.getElementById('narrationForm').addEventListener('submit', function() {
+  const btn = document.getElementById('btnExtract');
+  btn.innerHTML = '<span class="spinner"></span> Extracting...';
+  btn.disabled = true;
+});
+</script>
+{% endblock %}

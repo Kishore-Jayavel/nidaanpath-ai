@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Evaluation{% endblock %}
+
+{% block content %}
+<div class="page-title">📊 Synthetic MVP Evaluation</div>
+<p class="page-subtitle">Comparing detected results against ground-truth manifest. This is a prototype evaluation — not clinical validation.</p>
+
+<div class="alert alert-info mb-6 animate-in">
+  <span>ℹ</span>
+  <strong>Synthetic MVP Evaluation Only.</strong>
+  All records are synthetic demo documents.
+  Results do not constitute clinical validation or medical accuracy claims.
+</div>
+
+{% if eval_results %}
+<!-- Summary Metrics -->
+<div class="grid-4 mb-8 animate-in">
+  {% set total = eval_results | length %}
+  {% set type_correct = eval_results | selectattr('type_matched') | list | length %}
+  {% set date_correct = eval_results | selectattr('date_matched') | list | length %}
+  {% for label, val, color in [
+    ('Documents Evaluated', total, 'var(--deep-blue)'),
+    ('Type Classification', (type_correct / total * 100)|int|string + '%', 'var(--teal)'),
+    ('Date Extraction', (date_correct / total * 100)|int|string + '%', 'var(--success)'),
+    ('Confirmed', eval_results | selectattr('confirmed') | list | length, 'var(--teal)'),
+  ] %}
+  <div class="metric-card">
+    <div class="metric-label">{{ label }}</div>
+    <div class="metric-value" style="color:{{ color }}">{{ val }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Detailed Table -->
+<div class="card animate-in" style="animation-delay:0.15s">
+  <div class="card-header">
+    <div class="card-title">
+      <div class="card-icon blue">🔬</div>
+      Document-Level Evaluation
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Document</th>
+          <th>Expected Type</th>
+          <th>Detected Type</th>
+          <th>Type Match</th>
+          <th>Expected Date</th>
+          <th>Detected Date</th>
+          <th>Date Match</th>
+          <th>Confidence</th>
+          <th>Confirmed</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in eval_results %}
+        <tr>
+          <td>{{ r.report_number }}</td>
+          <td style="font-size:0.8rem;max-width:150px;overflow:hidden;text-overflow:ellipsis">{{ r.document }}</td>
+          <td style="font-size:0.8rem">{{ r.expected_type | replace('_', ' ') }}</td>
+          <td style="font-size:0.8rem">{{ r.detected_type | replace('_', ' ') }}</td>
+          <td>
+            {% if r.type_matched %}
+            <span class="chip chip-success">✅ Match</span>
+            {% else %}
+            <span class="chip chip-critical">✗ Mismatch</span>
+            {% endif %}
+          </td>
+          <td style="font-size:0.8rem">{{ r.expected_date }}</td>
+          <td style="font-size:0.8rem">{{ r.detected_date or '—' }}</td>
+          <td>
+            {% if r.date_matched %}
+            <span class="chip chip-success">✅</span>
+            {% else %}
+            <span class="chip chip-warning">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="progress-bar-wrap" style="width:60px">
+              <div class="progress-bar" style="width:{{ (r.extraction_confidence * 100)|int }}%"></div>
+            </div>
+            <span style="font-size:0.75rem">{{ (r.extraction_confidence * 100)|int }}%</span>
+          </td>
+          <td>
+            {% if r.confirmed %}
+            <span class="chip chip-success">✅</span>
+            {% else %}
+            <span class="chip chip-muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Expected Ground Truth -->
+{% if ground_truth %}
+<div class="card mt-6 animate-in" style="animation-delay:0.2s">
+  <div class="card-header">
+    <div class="card-title">
+      <div class="card-icon teal">📖</div>
+      Expected Journey States (Ground Truth)
+    </div>
+  </div>
+  <div class="card-body">
+    {% for scenario, state in ground_truth.get('expected_journey_states', {}).items() %}
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1rem;background:var(--bg);border-radius:var(--radius);margin-bottom:0.5rem">
+      <span style="font-size:0.85rem;color:var(--muted)">{{ scenario | replace('_', ' ') | title }}</span>
+      <strong style="font-size:0.85rem">{{ state }}</strong>
+    </div>
+    {% endfor %}
+
+    {% if ground_truth.get('expected_gaps') %}
+    <div style="margin-top:1.5rem">
+      <div style="font-size:0.8rem;color:var(--muted);font-weight:600;margin-bottom:0.5rem">EXPECTED GAPS (Reports 01–08)</div>
+      {% for gap in ground_truth.get('expected_gaps', []) %}
+      <span class="chip chip-warning" style="margin:3px;display:inline-block">{{ gap | replace('_', ' ') }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div style="margin-top:1.5rem;display:flex;gap:1rem">
+  <a href="{{ url_for('reports.clinician_packet') }}" class="btn btn-outline">← Clinician Packet</a>
+  <a href="{{ url_for('main.responsible_ai') }}" class="btn btn-outline">Responsible AI →</a>
+</div>
+{% endblock %}

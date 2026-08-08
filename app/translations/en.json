@@ -1,0 +1,46 @@
+{
+  "app_name": "NidaanPath AI",
+  "tagline": "Diagnostic Journey Stagnation and Escalation Agent",
+  "nav": {
+    "patient_story": "Patient Story",
+    "medical_records": "Medical Records",
+    "extraction_review": "Extraction Review",
+    "journey_twin": "Journey Twin",
+    "process_gaps": "Process Gaps",
+    "agent_action": "Agent Action",
+    "simulation": "Progress Simulation",
+    "clinician_packet": "Clinician Packet",
+    "evaluation": "Evaluation",
+    "responsible_ai": "Responsible AI",
+    "clear_case": "Clear Case",
+    "judge_demo": "Judge Demo"
+  },
+  "states": {
+    "Awaiting Evidence": "Awaiting Evidence",
+    "Active Progress": "Active Progress",
+    "Possible Stagnation": "Possible Stagnation",
+    "Clarification Required": "Clarification Required",
+    "Clinician Escalation Required": "Clinician Escalation Required",
+    "Diagnostic Closure Documented": "Diagnostic Closure Documented"
+  },
+  "safety": {
+    "no_diagnosis": "NidaanPath does not diagnose, prescribe or replace healthcare professionals.",
+    "clinician_review": "Clinician Review Required",
+    "disclaimer": "This is a prototype system. Not a medical device."
+  },
+  "hero": {
+    "headline": "Medical records show what happened.",
+    "headline2": "NidaanPath reveals what is still unresolved.",
+    "subtext": "NidaanPath AI reconstructs fragmented medical records into a live Diagnostic Journey Twin, identifies when diagnostic progress may have stalled and prepares the missing evidence for safe clinician review."
+  },
+  "buttons": {
+    "launch_demo": "Launch Judge Demo",
+    "new_journey": "Build a New Journey",
+    "load_reports": "Load Reports 01–08",
+    "add_specialist": "Add Specialist Evidence",
+    "add_result_review": "Add Result Review Evidence",
+    "download_pdf": "Download PDF Packet",
+    "confirm": "Confirm",
+    "reject": "Reject"
+  }
+}

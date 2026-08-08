@@ -1,0 +1,27 @@
+/* NidaanPath AI — Responsive Styles */
+@media (max-width: 1024px) {
+  :root { --nav-width: 200px; }
+  .grid-3 { grid-template-columns: 1fr 1fr; }
+  .grid-4 { grid-template-columns: 1fr 1fr; }
+  .hero-headline { font-size: 2.2rem; }
+  .comparison-grid { grid-template-columns: 1fr; }
+  .comparison-arrow { transform: rotate(90deg); padding-top: 0; }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --nav-width: 0px;
+    --topbar-height: 56px;
+  }
+  .sidenav { display: none; }
+  .main-content { margin-left: 0; }
+  .topbar { left: 0; }
+  .page-body { padding: var(--space-4); }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-section { padding: var(--space-8); }
+  .hero-headline { font-size: 1.8rem; }
+  .rai-list { grid-template-columns: 1fr; }
+  .agent-log-entry { grid-template-columns: 60px 1fr; }
+  .workflow-steps { gap: var(--space-1); }
+  .comparison-grid { grid-template-columns: 1fr; }
+}

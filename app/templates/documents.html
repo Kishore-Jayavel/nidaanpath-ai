@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}Medical Records{% endblock %}
+
+{% block content %}
+<div class="page-title">📁 Medical Records</div>
+<p class="page-subtitle">Upload medical documents or load the synthetic demo dataset. All records are extracted and reviewed before entering the diagnostic journey.</p>
+
+<div class="safety-banner">
+  <span>🔐</span>
+  Maximum {{ config.MAX_UPLOAD_MB if config is defined else 10 }}MB per file.
+  Accepted: PDF, PNG, JPG, JPEG.
+  All processing is server-side only.
+</div>
+
+<!-- Judge Demo Buttons -->
+<div class="card mb-6 animate-in" style="border:2px solid var(--uncertainty)">
+  <div class="card-header" style="background:var(--uncertainty-light)">
+    <div class="card-title">
+      <div class="card-icon purple">🎯</div>
+      Judge Demo Mode — Synthetic Dataset
+    </div>
+    <span class="chip chip-purple">No API Key Required</span>
+  </div>
+  <div class="card-body">
+    <p style="margin-bottom:1.5rem;font-size:0.875rem">
+      Load the 10 synthetic medical reports in the prescribed sequence to observe
+      the Diagnostic Journey Twin, stagnation detection, and state transitions.
+    </p>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="loadDemoBatch()" id="btnLoad18">
+        📂 Load Reports 01–08 (Stagnation State)
+      </button>
+      <button class="btn btn-teal" onclick="addEvidence(9)" id="btnLoad09">
+        🏥 Add Specialist Evidence — Report 09
+      </button>
+      <button class="btn btn-navy" onclick="addEvidence(10)" id="btnLoad10">
+        🔬 Add Result Review Evidence — Report 10
+      </button>
+    </div>
+    <div id="demoStatus" style="margin-top:1rem;display:none" class="alert alert-success">
+      <span>✅</span>
+      <span id="demoStatusText"></span>
+    </div>
+  </div>
+</div>
+
+<!-- File Upload Zone -->
+<div class="card mb-6 animate-in" style="animation-delay:0.1s">
+  <div class="card-header">
+    <div class="card-title">
+      <div class="card-icon blue">⬆</div>
+      Upload Your Own Documents
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-zone-icon">📄</div>
+      <div class="upload-zone-title">Drop files here or click to browse</div>
+      <div class="upload-zone-hint">PDF, PNG, JPG, JPEG · Max 10MB per file · Multiple files allowed</div>
+    </div>
+    <input type="file" id="fileInput" multiple accept=".pdf,.png,.jpg,.jpeg"
+           style="display:none" onchange="uploadFiles(this.files)">
+    <div id="uploadProgress" style="display:none;margin-top:1rem">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="uploadProgressBar" style="width:0%"></div>
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:0.5rem" id="uploadProgressText"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Document List -->
+<div class="card animate-in" style="animation-delay:0.2s">
+  <div class="card-header">
+    <div class="card-title">
+      <div class="card-icon teal">📋</div>
+      Uploaded Documents
+      <span class="chip chip-muted" id="docCount">0 documents</span>
+    </div>
+    <a href="{{ url_for('documents.extraction_review') }}" class="btn btn-outline btn-sm">
+      Review Extractions →
+    </a>
+  </div>
+  <div id="documentList" class="card-body">
+    {% if documents %}
+      {% for doc in documents %}
+      <div class="doc-card" id="doc-{{ doc.id }}">
+        <div class="doc-icon">
+          {% if doc.document_type == 'lab_report' %}🧪
+          {% elif doc.document_type == 'consultation_note' %}🩺
+          {% elif doc.document_type == 'referral_slip' %}📋
+          {% elif doc.document_type == 'prescription' %}💊
+          {% elif doc.document_type == 'specialist_consultation_note' %}👨‍⚕️
+          {% else %}📄{% endif %}
+        </div>
+        <div class="doc-info">
+          <div class="doc-name">{{ doc.original_filename }}</div>
+          <div class="doc-meta">
+            {{ doc.document_type | replace('_', ' ') | title }} ·
+            {{ doc.document_date or 'Date unknown' }} ·
+            {{ doc.provider or 'Provider unknown' }}
+          </div>
+          <div style="margin-top:4px">
+            {% if doc.confirmed_by_user %}
+            <span class="chip chip-success">✅ Confirmed</span>
+            {% else %}
+            <span class="chip chip-warning">⏳ Pending Review</span>
+            {% endif %}
+            <span class="chip chip-muted">Confidence: {{ (doc.extraction_confidence * 100)|int }}%</span>
+          </div>
+        </div>
+        <div class="doc-actions">
+          {% if not doc.confirmed_by_user %}
+          <button class="btn btn-teal btn-sm" onclick="confirmDoc('{{ doc.id }}')">✅ Confirm</button>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div style="text-align:center;padding:3rem;color:var(--muted)">
+      <div style="font-size:2.5rem;margin-bottom:1rem">📭</div>
+      <p>No documents uploaded yet.<br>Use the Judge Demo buttons above to get started.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if documents %}
+<div style="margin-top:1.5rem;display:flex;gap:1rem">
+  <a href="{{ url_for('documents.extraction_review') }}" class="btn btn-primary">
+    🔍 Review Extractions →
+  </a>
+  <a href="{{ url_for('journey.dashboard') }}" class="btn btn-teal">
+    🗺 View Journey Twin →
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const UPLOAD_URL  = "{{ url_for('documents.do_upload') }}";
+const DEMO_BATCH  = "{{ url_for('demo.load_batch') }}";
+const ADD_EVIDENCE = "/demo/add-evidence/";
+
+// Drag-drop
+const zone = document.getElementById('uploadZone');
+['dragenter','dragover'].forEach(e => zone.addEventListener(e, ev => { ev.preventDefault(); zone.classList.add('drag-over'); }));
+['dragleave','drop'].forEach(e => zone.addEventListener(e, ev => { ev.preventDefault(); zone.classList.remove('drag-over'); }));
+zone.addEventListener('drop', ev => { uploadFiles(ev.dataTransfer.files); });
+
+function uploadFiles(files) {
+  if (!files || !files.length) return;
+  const fd = new FormData();
+  Array.from(files).forEach(f => fd.append('files', f));
+  const prog = document.getElementById('uploadProgress');
+  const bar  = document.getElementById('uploadProgressBar');
+  const txt  = document.getElementById('uploadProgressText');
+  prog.style.display = 'block';
+  bar.style.width = '30%';
+  txt.textContent = 'Uploading and extracting...';
+  fetch(UPLOAD_URL, {method:'POST', body: fd})
+    .then(r => r.json())
+    .then(data => {
+      bar.style.width = '100%';
+      txt.textContent = data.message || 'Done';
+      setTimeout(() => location.reload(), 800);
+    })
+    .catch(() => { txt.textContent = 'Upload failed — please try again.'; });
+}
+
+function loadDemoBatch() {
+  const btn = document.getElementById('btnLoad18');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Loading 8 reports...';
+  fetch(DEMO_BATCH, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({reports:[1,2,3,4,5,6,7,8]})})
+    .then(r => r.json())
+    .then(data => {
+      btn.innerHTML = '✅ Reports 01–08 Loaded';
+      showDemoStatus(`✅ ${data.loaded ? data.loaded.length : 8} reports loaded. Journey State: <strong>${data.journey_state}</strong>. Gaps detected: <strong>${data.remaining_gaps}</strong>`);
+      setTimeout(() => location.reload(), 1500);
+    })
+    .catch(() => { btn.innerHTML = '❌ Error'; btn.disabled = false; });
+}
+
+function addEvidence(num) {
+  const btn = document.getElementById(`btnLoad0${num}`);
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Loading Report ${String(num).padStart(2,'0')}...`;
+  fetch(ADD_EVIDENCE + num, {method:'POST'})
+    .then(r => r.json())
+    .then(data => {
+      btn.innerHTML = `✅ Report ${String(num).padStart(2,'0')} Added`;
+      showDemoStatus(`✅ Report ${num} processed. New Journey State: <strong>${data.journey_state}</strong>. Resolved: <strong>${(data.resolved_gaps||[]).join(', ') || 'none'}</strong>`);
+      setTimeout(() => location.reload(), 1500);
+    })
+    .catch(() => { btn.innerHTML = '❌ Error'; btn.disabled = false; });
+}
+
+function showDemoStatus(html) {
+  const el = document.getElementById('demoStatus');
+  el.style.display = 'flex';
+  document.getElementById('demoStatusText').innerHTML = html;
+}
+
+function confirmDoc(docId) {
+  const fd = new FormData();
+  fd.append('action', 'confirm');
+  fetch(`/documents/confirm/${docId}`, {method:'POST', body: fd})
+    .then(r => r.json())
+    .then(() => location.reload());
+}
+
+// Update doc count
+const docs = document.querySelectorAll('.doc-card');
+document.getElementById('docCount').textContent = docs.length + ' document' + (docs.length !== 1 ? 's' : '');
+</script>
+{% endblock %}

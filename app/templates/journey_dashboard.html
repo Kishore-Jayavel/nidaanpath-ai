@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+{% block title %}Diagnostic Journey Twin{% endblock %}
+
+{% block content %}
+<div class="page-title">🗺️ Diagnostic Journey Twin</div>
+<p class="page-subtitle">Live reconstruction of the diagnostic journey from confirmed medical records.</p>
+
+<div class="safety-banner">
+  <span>🛡</span>
+  Journey State is determined by <strong>deterministic Python rules only</strong>
+  (Safety Gate 2). Gemini does not decide stagnation.
+</div>
+
+<!-- Journey State + Metrics Row -->
+<div class="grid-4 mb-8">
+  <div class="metric-card animate-in" style="grid-column: span 2">
+    <div class="metric-label">Journey State</div>
+    {% set state = journey.journey_state %}
+    <div style="margin-top:0.75rem">
+      {% if state == 'Possible Stagnation' %}
+        <div class="state-chip state-possible-stagnation" style="font-size:1.1rem;padding:0.75rem 1.25rem">
+          ⚠️ {{ state }}
+        </div>
+        <p style="margin-top:1rem;font-size:0.82rem;color:var(--warning)">
+          Possible diagnostic-process stagnation detected from the uploaded evidence.
+          Clinical review is recommended.
+        </p>
+      {% elif state == 'Active Progress' %}
+        <div class="state-chip state-active-progress" style="font-size:1.1rem;padding:0.75rem 1.25rem">
+          ✅ {{ state }}
+        </div>
+        <p style="margin-top:1rem;font-size:0.82rem;color:var(--success)">
+          The diagnostic process shows recent progress. Review remaining gaps.
+        </p>
+      {% elif state == 'Clinician Escalation Required' %}
+        <div class="state-chip state-clinician-escalation" style="font-size:1.1rem;padding:0.75rem 1.25rem">
+          🚨 {{ state }}
+        </div>
+      {% else %}
+        <div class="state-chip state-awaiting-evidence" style="font-size:1.1rem;padding:0.75rem 1.25rem">
+          {{ state }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="metric-card animate-in" style="animation-delay:0.1s">
+    <div class="metric-label">Open Gaps</div>
+    <div class="metric-value text-critical">{{ journey.remaining_gaps | length }}</div>
+    <div style="font-size:0.78rem;color:var(--muted)">Unresolved process gaps</div>
+  </div>
+
+  <div class="metric-card animate-in" style="animation-delay:0.15s">
+    <div class="metric-label">Resolved</div>
+    <div class="metric-value text-success">{{ journey.resolved_gaps | length }}</div>
+    <div style="font-size:0.78rem;color:var(--muted)">Gaps closed by new evidence</div>
+  </div>
+</div>
+
+<!-- Diagnostic Process Completeness -->
+<div class="card mb-8 animate-in" style="animation-delay:0.2s">
+  <div class="card-header">
+    <div class="card-title">
+      <div class="card-icon blue">📊</div>
+      Diagnostic Process Completeness
+    </div>
+    <span class="chip chip-info">Transparent Metrics</span>
+  </div>
+  <div class="card-body">
+    {% set m = journey.metrics %}
+    <div class="grid-4" style="gap:1.5rem;margin-bottom:1.5rem">
+      {% for label, val, color in [
+        ('Consultations', m.consultations_detected, '#1D4ED8'),
+        ('Lab Reports', m.reports_detected, '#0F766E'),
+        ('Unreviewed Results', m.unreviewed_results, '#B91C1C'),
+        ('Open Referrals', m.incomplete_referrals, '#D97706'),
+      ] %}
+      <div style="text-align:center;padding:1rem;background:var(--bg);border-radius:var(--radius-lg)">
+        <div style="font-size:2rem;font-weight:800;color:{{ color }}">{{ val }}</div>
+        <div style="font-size:0.75rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">{{ label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="grid-2" style="gap:1rem">
+      {% for label, val, yes_color, no_color in [
+        ('Persistent Symptom Detected', m.persistent_symptom, '#B91C1C', '#15803D'),
+        ('Missed Follow-Up Signal', m.missed_followup, '#D97706', '#15803D'),
+        ('Medication Uncertainty', m.medication_uncertainty, '#7C3AED', '#15803D'),
+        ('Total Documents', m.total_documents, '#102A43', '#102A43'),
+      ] %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1rem;background:var(--bg);border-radius:var(--radius)">
+        <span style="font-size:0.85rem;color:var(--muted)">{{ label }}</span>
+        {% if val is sameas true %}
+        <span class="chip chip-critical">Yes</span>
+        {% elif val is sameas false %}
+        <span class="chip chip-success">No</span>
+        {% else %}
+        <strong style="color:{{ yes_color }}">{{ val }}</strong>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Timeline + Graph -->
+<div class="grid-2 mb-8" style="gap:2rem;align-items:start">
+
+  <!-- Chronological Timeline -->
+  <div class="card animate-in" style="animation-delay:0.25s">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="card-icon teal">📅</div>
+        Chronological Timeline
+      </div>
+      <span class="chip chip-muted">{{ journey.events | length }} events</span>
+    </div>
+    <div class="card-body" style="padding:1.5rem 1.5rem 1.5rem 3rem">
+      {% if journey.events %}
+      <div class="timeline">
+        {% for event in journey.events %}
+        <div class="timeline-item {{ event.event_type | lower | replace(' ', '_') }}"
+             id="event-{{ event.id }}" onclick="toggleEvent('{{ event.id }}')">
+          <div class="timeline-dot">{{ event.icon }}</div>
+          <div class="timeline-content">
+            <div class="timeline-date">{{ event.date }}</div>
+            <div class="timeline-title">{{ event.event_type }}</div>
+            <div class="timeline-provider">{{ event.provider }}</div>
+
+            {% if event.symptoms %}
+            <div style="margin-bottom:0.5rem">
+              {% for s in event.symptoms %}
+              <span class="chip chip-warning" style="margin:2px;font-size:0.7rem">{{ s }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="timeline-details" id="details-{{ event.id }}">
+              {% if event.tests_ordered %}
+              <div style="margin-bottom:0.5rem">
+                <div style="font-size:0.72rem;color:var(--muted);font-weight:600">TESTS ORDERED</div>
+                {% for t in event.tests_ordered %}
+                <span class="chip chip-info" style="font-size:0.7rem">{{ t }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+              {% if event.tests_completed %}
+              <div style="margin-bottom:0.5rem">
+                <div style="font-size:0.72rem;color:var(--muted);font-weight:600">COMPLETED</div>
+                {% for t in event.tests_completed %}
+                <span class="chip chip-success" style="font-size:0.7rem">{{ t }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+              {% if event.referral_specialty %}
+              <span class="chip chip-purple" style="font-size:0.7rem">
+                📋 Referral: {{ event.referral_specialty }}
+              </span>
+              {% endif %}
+              {% if event.follow_up_instructions %}
+              <div style="font-size:0.78rem;color:var(--muted);margin-top:0.5rem">
+                📌 {{ event.follow_up_instructions }}
+              </div>
+              {% endif %}
+              {% if event.uncertain_fields %}
+              <div style="margin-top:0.5rem">
+                {% for u in event.uncertain_fields %}
+                <span class="chip chip-warning" style="font-size:0.68rem">⚠ {{ u }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+              <div style="margin-top:0.5rem">
+                <span class="chip chip-muted" style="font-size:0.68rem">
+                  Confidence: {{ (event.extraction_confidence * 100)|int }}%
+                </span>
+                {% if event.result_review_status == 'reviewed' %}
+                <span class="chip chip-success" style="font-size:0.68rem">✅ Result Reviewed</span>
+                {% elif event.result_review_status == 'not_reviewed' %}
+                <span class="chip chip-critical" style="font-size:0.68rem">⚠ Not Reviewed</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:3rem;color:var(--muted)">
+        <div style="font-size:2.5rem">📭</div>
+        <p style="margin-top:1rem">No confirmed documents yet.<br>
+          <a href="{{ url_for('documents.upload') }}">Load the demo dataset</a> to begin.
+        </p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Process Gaps -->
+  <div>
+    <div class="card mb-6 animate-in" style="animation-delay:0.3s">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-icon amber">⚠</div>
+          Unresolved Process Gaps
+          {% if journey.remaining_gaps %}
+          <span class="chip chip-critical">{{ journey.remaining_gaps|length }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-body" style="padding:1rem">
+        {% if journey.remaining_gaps %}
+          {% for gap in journey.remaining_gaps %}
+          <div class="gap-card {{ gap.severity }} mb-6"
+               style="margin-bottom:0.75rem">
+            <div class="gap-priority">
+              <span class="chip {% if gap.severity == 'high' %}chip-critical{% else %}chip-warning{% endif %}">
+                {{ gap.severity | upper }}
+              </span>
+            </div>
+            <div class="gap-title">{{ gap.label }}</div>
+            <div class="gap-description">{{ gap.description }}</div>
+            <div class="gap-action">
+              → {{ gap.next_action }}
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="padding:1.5rem;text-align:center;color:var(--success)">
+            ✅ No unresolved process gaps detected
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if journey.resolved_gaps %}
+    <div class="card animate-in" style="animation-delay:0.35s">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-icon green">✅</div>
+          Resolved Gaps
+          <span class="chip chip-success">{{ journey.resolved_gaps|length }}</span>
+        </div>
+      </div>
+      <div class="card-body" style="padding:1rem">
+        {% for gap in journey.resolved_gaps %}
+        <div class="gap-card resolved" style="margin-bottom:0.75rem">
+          <div class="gap-title">✅ {{ gap.label }}</div>
+          <div class="gap-description" style="font-size:0.8rem">{{ gap.resolution_note }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Next Evidence Question -->
+    {% if journey.next_question %}
+    <div class="card animate-in" style="animation-delay:0.4s;border:2px solid var(--deep-blue);margin-top:1.5rem">
+      <div class="card-header" style="background:#EFF6FF">
+        <div class="card-title">
+          <div class="card-icon blue">🤖</div>
+          NidaanPath Coordinator — Next Question
+        </div>
+        <span class="chip chip-info">Safety Cleared ✓</span>
+      </div>
+      <div class="card-body">
+        <div style="font-size:1rem;color:var(--navy);line-height:1.6;margin-bottom:1rem">
+          <strong>{{ journey.next_question.question_en }}</strong>
+        </div>
+        {% if journey.next_question.question_ta %}
+        <div style="font-size:0.9rem;color:var(--muted);margin-bottom:1rem">
+          {{ journey.next_question.question_ta }}
+        </div>
+        {% endif %}
+        {% if journey.next_question.upload_hint %}
+        <div class="alert alert-info" style="font-size:0.82rem">
+          <span>📎</span>
+          {{ journey.next_question.upload_hint }}
+        </div>
+        {% endif %}
+        {% if journey.next_question.escalate %}
+        <div class="alert alert-critical" style="font-size:0.82rem">
+          <span>🚨</span>
+          <strong>Clinician Review Required</strong> — NidaanPath cannot resolve this automatically.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Action Buttons -->
+<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem">
+  <a href="{{ url_for('journey.uncertainty_ledger') }}" class="btn btn-outline">
+    📋 Uncertainty Ledger
+  </a>
+  <a href="{{ url_for('agent.activity') }}" class="btn btn-outline">
+    🤖 Agent Activity
+  </a>
+  <a href="{{ url_for('journey.simulation') }}" class="btn btn-outline">
+    ⚡ Progress Simulation
+  </a>
+  <button class="btn btn-primary" onclick="runCoordinator()">
+    🔄 Rebuild Journey
+  </button>
+  <a href="{{ url_for('reports.clinician_packet') }}" class="btn btn-teal">
+    📋 Generate Clinician Packet →
+  </a>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleEvent(id) {
+  const item = document.getElementById('event-' + id);
+  const details = document.getElementById('details-' + id);
+  if (item) item.classList.toggle('expanded');
+}
+
+function runCoordinator() {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Rebuilding...';
+  fetch("{{ url_for('agent.run_coordinator') }}", {method:'POST'})
+    .then(r => r.json())
+    .then(data => {
+      btn.innerHTML = '✅ Rebuilt';
+      setTimeout(() => location.reload(), 600);
+    })
+    .catch(() => { btn.innerHTML = '❌ Error'; btn.disabled = false; });
+}
+</script>
+{% endblock %}
