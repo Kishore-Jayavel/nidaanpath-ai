@@ -1,3 +1,4 @@
+
 # NidaanPath AI
 ## Diagnostic Journey Stagnation and Escalation Agent
 
@@ -177,3 +178,5 @@ NidaanPath **ONLY**:
 
 *NidaanPath AI — Prototype Diagnostic Process Continuity System*
 *Not a medical device. Not for clinical use.*
+=
+
